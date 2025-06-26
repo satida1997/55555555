@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>สรุปข้อมูลรายวัน</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+</head>
+<body class="bg-pink-50 min-h-screen font-sans p-6">
+  <div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold text-center text-purple-600 mb-6">📊 สรุปรายวัน Franck&Sa</h1>
+
+    <label for="date-input" class="block text-center font-medium text-purple-700 mb-2">เลือกวันที่</label>
+    <input type="date" id="date-input" class="block mx-auto mb-6 border rounded px-4 py-2" />
+
+    <div class="bg-white p-6 rounded-xl shadow">
+      <canvas id="summary-chart"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const SHEET_URL = 'https://script.google.com/macros/s/AKfycbxr2e8X9TdxOiOcgl55HAacpMtlS65c6sxatHBNccWs0pvpKQw6lvuBGVyTIKDjK-xd-g/exec';
+    const chartCtx = document.getElementById('summary-chart').getContext('2d');
+    const dateInput = document.getElementById('date-input');
+
+    let chart;
+
+    dateInput.addEventListener('change', async () => {
+      const selectedDate = dateInput.value;
+      const res = await fetch(SHEET_URL);
+      const data = await res.json();
+
+      const filtered = data.filter(entry => entry.date === selectedDate);
+      const income = filtered.filter(d => d.amount > 0).reduce((sum, d) => sum + parseFloat(d.amount), 0);
+      const expense = filtered.filter(d => d.amount < 0).reduce((sum, d) => sum + Math.abs(parseFloat(d.amount)), 0);
+
+      if (chart) chart.destroy();
+      chart = new Chart(chartCtx, {
+        type: 'pie',
+        data: {
+          labels: ['รายรับ', 'รายจ่าย'],
+          datasets: [{
+            data: [income, expense],
+            backgroundColor: ['#a5f3fc', '#fbcfe8']
+          }]
+        },
+        options: {
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
